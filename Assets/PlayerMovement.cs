@@ -2,6 +2,7 @@ using static Player;
 using UnityEngine;
 using UnityEngine.InputSystem;
 using System;
+using Cinemachine;
 
 public class PlayerMovement : MonoBehaviour
 {
@@ -12,11 +13,14 @@ public class PlayerMovement : MonoBehaviour
     private Rigidbody rb;
     public float jumpForce = 1.5f; // fuerza de salto
     public bool isGrounded = true; // variable para verificar si el jugador está en el suelo
+    public Camera cam; // referencia a la cámara
+    public CinemachineFreeLook vcam; // referencia a la cámara virtual de cinemachine
+    public CinemachineFreeLook vcamFreeLook; // referencia a la cámara virtual de cinemachine free look
     private void Awake()
     {
         playerMove = new Player();
         rb = GetComponent<Rigidbody>();
-
+        
     }
     void OnEnable()
     {
@@ -38,11 +42,11 @@ public class PlayerMovement : MonoBehaviour
             Vector3 move = transform.right * movex + transform.forward * movez;
             transform.position += move.normalized * speed * Time.deltaTime;
         }
-
+        RotateTowardsMouse();
     }
     public void OnMove(InputAction.CallbackContext context)
     {
-        
+
         movementInput = context.ReadValue<Vector3>();
 
     }
@@ -51,13 +55,34 @@ public class PlayerMovement : MonoBehaviour
         isGrounded = Physics.Raycast(transform.position, Vector3.down, 0.5f);
         if (isGrounded)
         {
-            Vector3 dir= Vector3.up;
+            Vector3 dir = Vector3.up;
             dir.x = movementInput.x;
             dir.z = movementInput.y;
             dir.Normalize();
             rb.AddForce(dir * jumpForce, ForceMode.Impulse);
         }
-        
+
+    }
+    public void OnChangeCamera(InputAction.CallbackContext context)
+    {
+        if(vcam.Priority>vcamFreeLook.Priority)
+        {
+            vcam.Priority = 0;
+            vcamFreeLook.Priority = 1;
+        }
+        else
+        {
+            vcam.Priority = 1;
+            vcamFreeLook.Priority = 0;
+        }
+    }
+    private void RotateTowardsMouse()
+    {
+        Vector3 forward = cam.transform.forward;
+        forward.y = 0;
+        forward.Normalize();
+        Cursor.visible = false;
+        transform.rotation = Quaternion.LookRotation(forward);
     }
 
 }
