@@ -14,7 +14,7 @@ public class PlayerMovement : MonoBehaviour
     public float jumpForce = 1.5f; // fuerza de salto
     public bool isGrounded = true; // variable para verificar si el jugador está en el suelo
     public Camera cam; // referencia a la cámara
-    public CinemachineFreeLook vcam; // referencia a la cámara virtual de cinemachine
+    public CinemachineVirtualCamera vcam; // referencia a la cámara virtual de cinemachine
     public CinemachineFreeLook vcamFreeLook; // referencia a la cámara virtual de cinemachine free look
     private void Awake()
     {
@@ -55,11 +55,15 @@ public class PlayerMovement : MonoBehaviour
         isGrounded = Physics.Raycast(transform.position, Vector3.down, 0.5f);
         if (isGrounded)
         {
-            Vector3 dir = Vector3.up;
-            dir.x = movementInput.x;
-            dir.z = movementInput.y;
-            dir.Normalize();
-            rb.AddForce(dir * jumpForce, ForceMode.Impulse);
+            // Convertir movimientoInput (local) a dirección mundial
+            Vector3 moveDir = transform.right * movementInput.x + transform.forward * movementInput.y;
+            moveDir.Normalize();
+
+            // Combinar con salto hacia arriba
+            Vector3 jumpDir = moveDir + Vector3.up;
+            jumpDir.Normalize();
+
+            rb.AddForce(jumpDir * jumpForce, ForceMode.Impulse);
         }
 
     }
