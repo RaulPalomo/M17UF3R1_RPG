@@ -35,7 +35,8 @@ public class PlayerMovement : MonoBehaviour
     public float bulletSpeed = 20f; // velocidad de la bala
     public Transform targetPoint; // punto objetivo para disparar
 
-    private Transform lastSpawn;
+    
+    public Vector3 lastSpawn;
     private void Awake()
     {
         playerMove = new Player();
@@ -43,6 +44,7 @@ public class PlayerMovement : MonoBehaviour
         animator = GetComponent<Animator>();
         Cursor.lockState = CursorLockMode.Locked; // Bloquea el cursor al centro de la pantalla
         Cursor.visible = false; // Oculta el cursor
+        lastSpawn= GetComponent<Transform>().position;
     }
     void OnEnable()
     {
@@ -97,7 +99,7 @@ public class PlayerMovement : MonoBehaviour
     public void OnJump(InputAction.CallbackContext context)
     {
         isGrounded = Physics.Raycast(transform.position, Vector3.down, 0.5f);
-        if (isGrounded && !cheering &&canJump)
+        if (isGrounded && !cheering &&canJump && !isDead)
         {
             animator.SetTrigger("jump");
             // Convertir movimientoInput (local) a dirección mundial
@@ -121,6 +123,7 @@ public class PlayerMovement : MonoBehaviour
     }
     public void OnCelebrate(InputAction.CallbackContext context)
     {
+        if (isDead) return;
         if (context.performed)
         {
             StartCoroutine(Celebration());
@@ -130,6 +133,7 @@ public class PlayerMovement : MonoBehaviour
 
     public void OnShoot(InputAction.CallbackContext context)
     {
+        if (isDead) return;
         if (context.performed)
         {
             animator.SetTrigger("shoot");
@@ -139,7 +143,8 @@ public class PlayerMovement : MonoBehaviour
 
     void Shoot()
     {
-        // Disparo hacia donde está el mouse en el mundo
+        if (isDead) return;
+
         Vector3 direction = (targetPoint.position - firePoint.position).normalized;
 
         GameObject bullet = Instantiate(bulletPrefab, firePoint.position, Quaternion.LookRotation(direction));
@@ -180,6 +185,7 @@ public class PlayerMovement : MonoBehaviour
     }*/
     public void OnAim(InputAction.CallbackContext context)
     {
+        if (isDead) return;
         context.action.canceled += ctx => animator.SetLayerWeight(animator.GetLayerIndex("AimLayer"), 0f);
         context.action.canceled += ctx => animator.SetBool("aiming", false);
         if (context.performed)
@@ -190,6 +196,13 @@ public class PlayerMovement : MonoBehaviour
         //animator.SetTrigger("aim");
     }
 
+    public void OnRespawn(InputAction.CallbackContext context)
+    {
+        animator.SetTrigger("jump");
+        transform.position = lastSpawn;
+        maxHealth = 100f; // reinicia la salud máxima del jugador
+        isDead = false; // reinicia el estado de muerte
+    }
     private void RotateTowardsMouse()
     {
         float mouseX = Mouse.current.delta.x.ReadValue() * rotationSpeed;  // sensibilidad (ajusta 0.1f si va muy rápido/lento)
@@ -201,7 +214,7 @@ public class PlayerMovement : MonoBehaviour
         maxHealth -= damage;
         if(maxHealth <= 0&&!isDead)
         {
-            GetComponent<PlayerInput>().enabled = false;
+            //GetComponent<PlayerInput>().enabled = false;
             animator.SetTrigger("die");
             isDead = true;
         }
