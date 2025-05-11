@@ -21,13 +21,21 @@ public class PlayerMovement : MonoBehaviour
     private bool canJump = true; // variable para verificar si el jugador puede saltar
     public float jumpForce = 1.5f; // fuerza de salto
     public bool isGrounded = true; // variable para verificar si el jugador está en el suelo
-
+    public bool isDead = false; // variable para verificar si el jugador está muerto    
 
     public Camera mainCam; // referencia a la cámara
     public Camera cheerCam; // referencia a la cámara de celebración
 
     public CinemachineVirtualCamera vcam; // referencia a la cámara virtual de cinemachine
     public CinemachineFreeLook vcamFreeLook; // referencia a la cámara virtual de cinemachine free look
+
+    //bullet
+    public GameObject bulletPrefab; // prefab de la bala
+    public Transform firePoint; // punto de disparo
+    public float bulletSpeed = 20f; // velocidad de la bala
+    public Transform targetPoint; // punto objetivo para disparar
+
+    private Transform lastSpawn;
     private void Awake()
     {
         playerMove = new Player();
@@ -47,6 +55,7 @@ public class PlayerMovement : MonoBehaviour
     }
     private void Update()
     {
+        if (isDead) return; 
         isGrounded = Physics.Raycast(transform.position, Vector3.down, 0.5f);
         // movimiento con wasd
         float movex = movementInput.x; // a y d
@@ -118,6 +127,25 @@ public class PlayerMovement : MonoBehaviour
         }
         
     }
+
+    public void OnShoot(InputAction.CallbackContext context)
+    {
+        if (context.performed)
+        {
+            animator.SetTrigger("shoot");
+            Shoot();
+        }
+    }
+
+    void Shoot()
+    {
+        // Disparo hacia donde está el mouse en el mundo
+        Vector3 direction = (targetPoint.position - firePoint.position).normalized;
+
+        GameObject bullet = Instantiate(bulletPrefab, firePoint.position, Quaternion.LookRotation(direction));
+        Rigidbody rb = bullet.GetComponent<Rigidbody>();
+        rb.velocity = direction * bulletSpeed;
+    }
     public IEnumerator Celebration()
     {
         animator.SetTrigger("cheer");
@@ -153,8 +181,13 @@ public class PlayerMovement : MonoBehaviour
     public void OnAim(InputAction.CallbackContext context)
     {
         context.action.canceled += ctx => animator.SetLayerWeight(animator.GetLayerIndex("AimLayer"), 0f);
+        context.action.canceled += ctx => animator.SetBool("aiming", false);
+        if (context.performed)
+        {
+            animator.SetBool("aiming",true);
+        }
         animator.SetLayerWeight(animator.GetLayerIndex("AimLayer"), 1f);
-        animator.SetTrigger("aim");
+        //animator.SetTrigger("aim");
     }
 
     private void RotateTowardsMouse()
@@ -166,6 +199,12 @@ public class PlayerMovement : MonoBehaviour
     public void TakeDamage(float damage)
     {
         maxHealth -= damage;
+        if(maxHealth <= 0&&!isDead)
+        {
+            GetComponent<PlayerInput>().enabled = false;
+            animator.SetTrigger("die");
+            isDead = true;
+        }
     }
 
 }
