@@ -11,5 +11,11 @@ public class Damager : MonoBehaviour
         {
             other.GetComponent<PlayerMovement>().TakeDamage(damageAmount);
         }
+        else if (other.CompareTag("Enemy"))
+        {
+
+            Debug.Log("Enemy hit");
+            other.GetComponent<EnemyAI>().TakeDamage(damageAmount);
+        }
     }
 }

@@ -99,16 +99,9 @@ public class EnemyAI : MonoBehaviour
         {
             StopCoroutine(attackCoroutine);
         }
-        if (CanSeePlayer())
-        {
-            currentState = State.Chasing;
-            return;
-        }
-        else
-        {
-            currentState = State.Searching;
-            searchTimer = searchTime;
-        }
+        
+        currentState = State.Chasing;
+        
 
     }
     public IEnumerator Attack()
